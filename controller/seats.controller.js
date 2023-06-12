@@ -37,7 +37,7 @@ const bookingSeats = async (req, res) => {
   const { numSeats } = req.body;
 
   if (!numSeats) {
-      return res.status(400).send({ message: 'Number of seats required' });
+    return res.status(400).send({ message: 'Number of seats required' });
   }
 
   const allSeats = await SeatModel.find({}).sort({ seatNo: 1 });
@@ -49,65 +49,65 @@ const bookingSeats = async (req, res) => {
 
   // Find available seats in each row
   for (let row = 1; row <= totalRows; row++) {
-      const rowSeats = allSeats.slice((row - 1) * seatsPerRow, row * seatsPerRow);
+    const rowSeats = allSeats.slice((row - 1) * seatsPerRow, row * seatsPerRow);
 
-          // this line is responsible for extracting the seats that belong to a particular row 
-      // based on the row number and the total number of seats per row (seatsPerRow). 
-      // It uses the Array.slice() method to extract a portion of the allSeats array, 
-      // starting from the index corresponding to the beginning of the row and ending at the index corresponding to the end of the row.
+    // this line is responsible for extracting the seats that belong to a particular row 
+    // based on the row number and the total number of seats per row (seatsPerRow). 
+    // It uses the Array.slice() method to extract a portion of the allSeats array, 
+    // starting from the index corresponding to the beginning of the row and ending at the index corresponding to the end of the row.
 
-      // For example, if row is 2 and seatsPerRow is 7, the line will extract seats 8 to 14 from the allSeats array, 
-      // which corresponds to the second row.
+    // For example, if row is 2 and seatsPerRow is 7, the line will extract seats 8 to 14 from the allSeats array, 
+    // which corresponds to the second row.
 
-      const availableSeats = rowSeats.filter(seat => !seat.isBooked);
+    const availableSeats = rowSeats.filter(seat => !seat.isBooked);
 
-      if (availableSeats.length >= numSeats) {
-          bookedSeats = availableSeats.slice(0, numSeats).map(seat => seat.seatNo);
-          break;
-      }
+    if (availableSeats.length >= numSeats) {
+      bookedSeats = availableSeats.slice(0, numSeats).map(seat => seat.seatNo);
+      break;
+    }
   }
 
   // If no single row has enough available seats, find closest available seats using sliding technique
   if (bookedSeats.length === 0) {
-      const unbookedSeats = allSeats.filter(seat => !seat.isBooked);
-      const unbookedSeatNos = unbookedSeats.map(seat => seat.seatNo);
+    const unbookedSeats = allSeats.filter(seat => !seat.isBooked);
+    const unbookedSeatNos = unbookedSeats.map(seat => seat.seatNo);
 
-      let startIndex = 0;
-      let endIndex = numSeats - 1;
+    let startIndex = 0;
+    let endIndex = numSeats - 1;
 
-      let minDiff = Infinity;
-      let closestSeats = [];
+    let minDiff = Infinity;
+    let closestSeats = [];
 
-      while (endIndex < unbookedSeatNos.length) {
-          const diff = Math.abs(unbookedSeatNos[startIndex]-unbookedSeatNos[endIndex]);
+    while (endIndex < unbookedSeatNos.length) {
+      const diff = Math.abs(unbookedSeatNos[startIndex] - unbookedSeatNos[endIndex]);
 
-          if (diff < minDiff) {
-              minDiff = diff;
-              closestSeats = unbookedSeatNos.slice(startIndex, endIndex + 1);
-          }
-
-          startIndex++;
-          endIndex++;
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestSeats = unbookedSeatNos.slice(startIndex, endIndex + 1);
       }
 
-      if (closestSeats.length === numSeats) {
-        // console.log("closestSeats",closestSeats);
-          bookedSeats = closestSeats;
-      }
+      startIndex++;
+      endIndex++;
+    }
+
+    if (closestSeats.length === numSeats) {
+      // console.log("closestSeats",closestSeats);
+      bookedSeats = closestSeats;
+    }
   }
 
   // If seats are available, mark them as booked and send the response
   if (bookedSeats.length > 0) {
-      for (const seat of allSeats) {
-          if (bookedSeats.includes(seat.seatNo)) {
-              seat.isBooked = true;
-              await seat.save();
-          }
+    for (const seat of allSeats) {
+      if (bookedSeats.includes(seat.seatNo)) {
+        seat.isBooked = true;
+        await seat.save();
       }
+    }
 
-      return res.status(200).send({ message: 'Seats booked successfully', bookedSeats });
+    return res.status(200).send({ message: 'Seats booked successfully', bookedSeats });
   } else {
-      return res.status(400).send({ message: 'Seats not available' });
+    return res.status(400).send({ message: 'Seats not available' });
   }
 };
 
@@ -141,10 +141,24 @@ const unbookSeats = async (req, res) => {
 };
 
 
+// reset all booked
+
+const resetAllBooked = async (req, res) => {
+  try {
+    await SeatModel.updateMany({ isBooked: true }, { isBooked: false });
+    res.status(200).send({ message: "All the seats are available for booking." });
+  } catch (error) {
+
+    res.status(400).send({ message: "Something went wrong", error: error.message });
+  }
+}
+
+
 
 module.exports = {
   generateSeats,
   getAllSeats,
   bookingSeats,
-  unbookSeats
+  unbookSeats,
+  resetAllBooked
 }
