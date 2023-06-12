@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
 // All Routes
 
 app.use('/api/seats',seatsRouter)
-app.use('/api/seats/latest',latestSeatsRouter)
+app.use('/api/latest',latestSeatsRouter)
 
 
 const PORT = process.env.PORT || 8085;
